@@ -6,7 +6,7 @@ linked page before you submit.
 ## Before any marketplace
 
 1. Deploy the site, so `/privacy/`, `/terms/` and `/support/` are live and `GET /mcp/` answers 405.
-2. Make `support@willitplug.com` receive mail.
+2. Check that `willitplug-support@richardb.me` receives mail.
 3. Confirm the operator name in `src/lib/publisher.ts` and here in the manifests matches the identity
    you verify. Have the privacy policy and terms reviewed.
 4. Make this repository public. Cursor requires open source, Gemini's crawler needs a public repo, and
