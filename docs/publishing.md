@@ -28,16 +28,19 @@ linked page before you submit.
 
 ## Official MCP Registry
 
-The namespace `com.willitplug` needs domain proof. DNS proof is simplest, because the server is on the
-`www` subdomain. Keep `key.pem` out of git; `.gitignore` already excludes it.
+The namespace `com.willitplug` needs DNS proof. HTTP proof can't work: the registry doesn't follow
+redirects and `willitplug.com` redirects to `www`, and it wouldn't cover the `www` subdomain anyway.
+
+The signing key is at `~/.config/willitplug/mcp-registry-key.pem`, outside this repository. Keep it for
+future releases. macOS's own `openssl` has no Ed25519, so use one from nix.
 
 ```sh
-brew install mcp-publisher
-openssl genpkey -algorithm Ed25519 -out key.pem
-PUBLIC_KEY="$(openssl pkey -in key.pem -pubout -outform DER | tail -c 32 | base64)"
-echo "willitplug.com. IN TXT \"v=MCPv1; k=ed25519; p=${PUBLIC_KEY}\""
-# Add that record in Cloudflare DNS, wait for it to propagate, then:
-PRIVATE_KEY="$(openssl pkey -in key.pem -noout -text | grep -A3 "priv:" | tail -n +2 | tr -d ' :\n')"
+alias openssl='nix shell nixpkgs#openssl -c openssl'
+KEY=~/.config/willitplug/mcp-registry-key.pem
+# The TXT record on willitplug.com, for a new key:
+echo "v=MCPv1; k=ed25519; p=$(openssl pkey -in $KEY -pubout -outform DER | tail -c 32 | base64)"
+# To publish, with mcp-publisher from https://github.com/modelcontextprotocol/registry/releases:
+PRIVATE_KEY="$(openssl pkey -in $KEY -noout -text | grep -A3 "priv:" | tail -n +2 | tr -d ' :\n')"
 mcp-publisher login dns --domain willitplug.com --private-key "${PRIVATE_KEY}"
 mcp-publisher publish
 ```
