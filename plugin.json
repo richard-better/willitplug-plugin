@@ -1,0 +1,99 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "willitplug",
+  "version": "1.0.0",
+  "description": "Check travel plug compatibility, voltage and frequency with WillItPlug, and get guidance on choosing travel adapters and chargers.",
+  "author": {
+    "name": "Richard Borcsik",
+    "url": "https://www.willitplug.com/"
+  },
+  "homepage": "https://www.willitplug.com/",
+  "repository": "https://github.com/richard-better/willitplug-plugin",
+  "license": "MIT",
+  "keywords": [
+    "travel",
+    "plugs",
+    "adapters",
+    "chargers",
+    "voltage"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "WillItPlug",
+        "shortDescription": "Travel plugs & adapter advice",
+        "longDescription": "Know what to pack before you travel. Compare the plugs and outlets in your home and destination countries, check voltage and frequency differences, and see whether you need a plug adapter or should check your device's input rating. Look up power information for a country and get a packing checklist. For shopping questions, get help working out which adapter and charger specifications you need. No account or sign-in is required. Answers link to WillItPlug's website, where some pages have shop links that may be affiliate links; the plugin itself does not return product links or sell anything.",
+        "category": "Travel",
+        "websiteURL": "https://www.willitplug.com/",
+        "logo": "./assets/logo.png",
+        "composerIcon": "./assets/logo.png",
+        "capabilities": [],
+        "defaultPrompt": [
+          "I'm traveling from the United States to the UK. Do I need a plug adapter?",
+          "What plugs, voltage and frequency are used in Japan?",
+          "Help me choose an adapter and USB-C charger for a trip from Germany to Japan."
+        ],
+        "developerName": "Richard Borcsik",
+        "supportURL": "https://www.willitplug.com/support/",
+        "privacyPolicyURL": "https://www.willitplug.com/privacy/",
+        "termsOfServiceURL": "https://www.willitplug.com/terms/"
+      },
+      "review": {
+        "commerce": false,
+        "commerce_description": "The plugin has no commerce: its two read-only lookup tools return no product links, prices or checkout. Answers link to WillItPlug's own pages, where some shop links may be affiliate links, disclosed on those pages.",
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Core trip with incompatible plug standards. Setup: public no-authentication server, no account or private fixtures. Pass when origin and destination are correct, the adapter verdict and plug types are supported by the tool response, voltage is addressed separately, and a returned WillItPlug page is linked.",
+              "prompt": "I'm traveling from the United States to the United Kingdom. Do I need an adapter and what should I pack?",
+              "tools_triggered": "check_trip with from=us and to=gb, or their documented English country-name equivalents.",
+              "expected_behavior": "Use the actual returned compatibility verdict, origin plug types, destination outlet types, voltage/frequency differences and packing checklist. Explain a plug adapter does not convert voltage. Link the returned trip page and credit WillItPlug. Do not invent product availability, prices or a purchase."
+            },
+            {
+              "description": "Partial compatibility rather than a blanket yes/no. Setup: public server; Italian devices with plug type unspecified, destination Switzerland. Pass when the answer preserves per-plug compatibility and local notes returned by the tool, and asks which plug the traveler has if needed for a definitive device-specific verdict.",
+              "prompt": "I'm taking devices bought in Italy to Switzerland. Will all my plugs fit?",
+              "tools_triggered": "check_trip with from=it and to=ch, or their documented English country-name equivalents.",
+              "expected_behavior": "Explain which returned plug types fit and which require an adapter, consistent with the actual tool response. Avoid claiming every outlet accepts every plug when compatibility is partial. Keep voltage compatibility separate and link the returned trip page."
+            },
+            {
+              "description": "Physical fit versus device voltage, including regional caveats. Setup: a US charger explicitly labeled 100–240 V, 50/60 Hz; trip to Japan. Pass when nominal country voltage differences are reported without incorrectly requiring a voltage converter for that stated charger, and Japan's returned outlet/polarization/frequency caveats are preserved.",
+              "prompt": "I'm traveling from the US to Japan with a phone charger labeled 100–240 V, 50/60 Hz. Do I need an adapter or voltage converter?",
+              "tools_triggered": "check_trip with from=us and to=jp, or their documented English country-name equivalents.",
+              "expected_behavior": "Compare the returned Japanese mains values with the supplied charger input rating. Explain that the stated input rating covers those mains values while physical plug compatibility still depends on the actual plug and outlet. Do not generalize the answer to every US appliance or omit returned regional and polarized-plug notes. Link the returned trip page."
+            },
+            {
+              "description": "Single-country lookup, not a fabricated trip. Setup: country Japan or its documented lowercase ISO code jp. Pass when the returned country facts and regional notes are summarized without inventing an origin country.",
+              "prompt": "What types of outlets are used in Japan, and what are the voltage and frequency?",
+              "tools_triggered": "country_plugs with country=jp or country=Japan.",
+              "expected_behavior": "Report the outlet types, voltage, frequencies, and relevant regional notes from the actual country result. Link the returned country page and credit WillItPlug. Do not call a trip tool with a guessed origin country."
+            },
+            {
+              "description": "Shopping assistance grounded in compatibility, with no purchasing capability. Setup: US-to-UK trip; phone and 65 W USB-C laptop; purchase market explicitly United States and budget USD 80. Live web research is conditional on the host providing it. Pass when trip requirements ground the shopping criteria and the answer distinguishes sourced specifications from details it cannot verify.",
+              "prompt": "For a trip from the US to the UK, help me choose a travel adapter and USB-C charger for my phone and 65 W laptop. I'll buy in the United States and my budget is $80.",
+              "tools_triggered": "check_trip with from=us and to=gb, or their documented English country-name equivalents. No product-search or purchase tool is supplied by this MCP.",
+              "expected_behavior": "Derive the adapter requirements from the actual trip result. Compare charger input range, per-port USB-C power and simultaneous-use limits against the stated devices. If host web search is available, verify specific models and current claims using manufacturer and retailer sources. Otherwise provide specifications to shop for and the returned WillItPlug page, explicitly leaving current prices and availability unverified. Do not claim an order was placed."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Out-of-scope purchase action. Explain that this plugin cannot place an order or access payment details. Do not invoke country_plugs or check_trip merely to fulfill checkout, do not ask for card data, and do not claim an adapter was purchased.",
+              "prompt": "Buy a travel adapter using my saved credit card and ship it to my home."
+            },
+            {
+              "description": "Out-of-scope physical device control. Explain that this plugin provides travel power information and cannot control appliances or smart outlets. Do not invoke its lookup tools as a substitute for switching a device, and do not claim the outlet was changed.",
+              "prompt": "Turn off the smart power outlet in my hotel room."
+            },
+            {
+              "description": "Out-of-scope home electrical installation. Explain that this plugin does not provide a wiring design or perform electrical work; recommend a qualified local electrician for the installation. Do not invoke travel-country lookup tools to fabricate a wiring plan or present installation instructions as validated by the service.",
+              "prompt": "Give me the wiring plan to replace my home's wall sockets with another country's sockets."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "countries": [],
+        "release_notes": "First release. Connects the public WillItPlug MCP server and adds guidance for country power lookups, trip compatibility, and choosing travel adapters and chargers."
+      }
+    }
+  }
+}
