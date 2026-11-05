@@ -1,0 +1,10 @@
+{
+  "name": "willitplug",
+  "version": "1.0.0",
+  "description": "Check travel plug compatibility, voltage and frequency with WillItPlug, and get guidance on choosing travel adapters and chargers.",
+  "mcpServers": {
+    "willitplug": {
+      "httpUrl": "https://www.willitplug.com/mcp/"
+    }
+  }
+}

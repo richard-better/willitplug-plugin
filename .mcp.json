@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "willitplug": {
+      "type": "http",
+      "url": "https://www.willitplug.com/mcp/"
+    }
+  }
+}

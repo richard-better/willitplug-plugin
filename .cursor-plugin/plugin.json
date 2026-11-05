@@ -1,0 +1,17 @@
+{
+  "name": "willitplug",
+  "displayName": "WillItPlug",
+  "version": "1.0.0",
+  "description": "Check travel plug compatibility, voltage and frequency with WillItPlug, and get guidance on choosing travel adapters and chargers.",
+  "author": {
+    "name": "Richard Borcsik",
+    "url": "https://www.willitplug.com/"
+  },
+  "logo": "./assets/logo.svg",
+  "homepage": "https://www.willitplug.com/",
+  "repository": "https://github.com/richard-better/willitplug-plugin",
+  "license": "MIT",
+  "keywords": ["travel", "plugs", "adapters", "chargers", "voltage"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}
