@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "willitplug",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Check travel plug compatibility, voltage and frequency with WillItPlug, and get guidance on choosing travel adapters and chargers.",
   "author": {
     "name": "Richard Borcsik",
@@ -95,7 +95,7 @@
       },
       "publication": {
         "countries": [],
-        "release_notes": "Consolidates the official agent package into this plugin, adds outlet-to-country and connector-standard workflows plus an HTTPS fallback, and checks all four public MCP tools."
+        "release_notes": "Clarifies task routing, lookup completion, outlet-type search and device-label checks in the travel-power skill."
       }
     }
   }
