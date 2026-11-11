@@ -14,12 +14,25 @@ There is no account, API key or sign-in, and nothing to install or run locally.
 
 ## Tools
 
-| Tool                     | What it does                                                               |
-| ------------------------ | -------------------------------------------------------------------------- |
-| `check_trip(from, to)`   | Which plugs fit, whether an adapter or converter is needed, what to pack   |
-| `country_plugs(country)` | One country's outlet and plug types, voltage, frequency and regional notes |
+| Tool                             | What it does                                                               |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `check_trip(from, to)`           | Which plugs fit, whether an adapter or converter is needed, what to pack   |
+| `country_plugs(country)`         | One country's outlet and plug types, voltage, frequency and regional notes |
+| `find_countries_by_outlet(type)` | Countries using an IEC outlet type, A to O                                 |
+| `plug_type(type)`                | Connector standards, grounding and socket compatibility                    |
 
-Both are read-only and take an English country name or ISO code.
+All four are read-only. Country inputs accept English names or ISO codes; connector
+inputs accept IEC letters A to O.
+
+## Install the skill
+
+```sh
+npx skills add richard-better/willitplug-plugin --skill travel-power
+```
+
+This repository is the canonical public plugin and agent-skill source. The former
+`willitplug-agents` repository is superseded by this package. Its existing downloads
+remain available for compatibility; use this repository for current releases.
 
 ## Connect it
 
@@ -29,18 +42,18 @@ Server URL, using Streamable HTTP with no authentication:
 https://www.willitplug.com/mcp/
 ```
 
-| Client         | How                                                              |
-| -------------- | ---------------------------------------------------------------- |
-| Claude Code    | `claude mcp add --transport http willitplug https://www.willitplug.com/mcp/` |
-| Claude         | Customize > Connectors > add a custom connector with the URL     |
-| ChatGPT        | Install WillItPlug from the plugin directory once it is listed   |
-| Cursor         | Install from the marketplace once listed, or add the URL as an MCP server |
+| Client         | How                                                                             |
+| -------------- | ------------------------------------------------------------------------------- |
+| Claude Code    | `claude mcp add --transport http willitplug https://www.willitplug.com/mcp/`    |
+| Claude         | Customize > Connectors > add a custom connector with the URL                    |
+| ChatGPT        | Install WillItPlug from the plugin directory once it is listed                  |
+| Cursor         | Install from the marketplace once listed, or add the URL as an MCP server       |
 | Gemini CLI     | `gemini extensions install https://github.com/richard-better/willitplug-plugin` |
-| GitHub Copilot | Add the URL as an HTTP MCP server, or install this repository as a plugin |
+| GitHub Copilot | Add the URL as an HTTP MCP server, or install this repository as a plugin       |
 
 ## What it sends and fetches
 
-The plugin runs no local code. When a tool is called, the assistant sends the country names or codes
+The plugin runs no local code. When a tool is called, the assistant sends country names, codes or IEC plug types
 to `https://www.willitplug.com/mcp/` and gets back public data and links to WillItPlug pages. It sends
 nothing else, and needs no credentials or personal data.
 
@@ -55,14 +68,14 @@ links, prices or checkout.
 
 The manifests all describe the same plugin, in the format each marketplace reads.
 
-| Path                                  | Read by                                    |
-| ------------------------------------- | ------------------------------------------ |
-| `plugin.json`, `mcp.json`             | ChatGPT, GitHub Copilot, Agent Plugins hosts |
-| `.claude-plugin/plugin.json`, `.mcp.json` | Claude                                 |
-| `.cursor-plugin/plugin.json`          | Cursor                                     |
-| `gemini-extension.json`               | Gemini CLI                                 |
-| `server.json`                         | Official MCP Registry                      |
-| `skills/`, `assets/`                  | All of the above, where supported          |
+| Path                                      | Read by                                      |
+| ----------------------------------------- | -------------------------------------------- |
+| `plugin.json`, `mcp.json`                 | ChatGPT, GitHub Copilot, Agent Plugins hosts |
+| `.claude-plugin/plugin.json`, `.mcp.json` | Claude                                       |
+| `.cursor-plugin/plugin.json`              | Cursor                                       |
+| `gemini-extension.json`                   | Gemini CLI                                   |
+| `server.json`                             | Official MCP Registry                        |
+| `skills/`, `assets/`                      | All of the above, where supported            |
 
 The server itself lives in the WillItPlug site and is not in this repository.
 
@@ -78,6 +91,12 @@ node scripts/package-chatgpt.mjs      # build dist/willitplug-chatgpt.zip for Op
 
 [docs/publishing.md](docs/publishing.md) has the steps for each marketplace, and
 [docs/discovery.md](docs/discovery.md) has how to measure whether assistants pick WillItPlug.
+
+The website's `/skill.md` is a compatibility copy of this repository's `travel-power`
+skill under its original domain skill name. Website package components are imported
+from an explicit repository snapshot. ChatGPT packaging and review metadata are
+maintained here, including availability in all supported countries. A verified host
+demo and creator attestations are still required before submission.
 
 ## License
 

@@ -1,7 +1,7 @@
 {
   "name": "willitplug",
   "displayName": "WillItPlug",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Check travel plug compatibility, voltage and frequency with WillItPlug, and get guidance on choosing travel adapters and chargers.",
   "author": {
     "name": "Richard Borcsik",

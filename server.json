@@ -1,14 +1,16 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "com.willitplug/mcp",
+  "name": "com.willitplug/willitplug",
   "title": "WillItPlug",
-  "description": "Travel plug, outlet, voltage and frequency answers for any country or trip. No account needed.",
-  "repository": {
-    "url": "https://github.com/richard-better/willitplug-plugin",
-    "source": "github"
-  },
-  "websiteUrl": "https://www.willitplug.com/",
-  "version": "1.0.0",
+  "description": "Product tools for travel plug checks, packing lists and country power standards. Public, read-only.",
+  "version": "1.2.1",
+  "websiteUrl": "https://www.willitplug.com/developers/",
+  "icons": [
+    {
+      "src": "https://www.willitplug.com/favicon.svg",
+      "mimeType": "image/svg+xml"
+    }
+  ],
   "remotes": [
     {
       "type": "streamable-http",

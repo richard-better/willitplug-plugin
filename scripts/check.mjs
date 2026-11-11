@@ -36,23 +36,36 @@ const urls = {
   "server.json": read("server.json").remotes[0].url,
 };
 
-for (const [path, manifest] of Object.entries(manifests)) {
+for (const [path, manifest] of Object.entries(manifests).filter(
+  ([path]) => path !== "server.json",
+)) {
   check(manifest.version === plugin.version, `${path} is version ${plugin.version}`);
 }
-for (const [path, url] of Object.entries(urls)) check(url === serverUrl, `${path} uses ${serverUrl}`);
+check(
+  /^\d+\.\d+\.\d+$/.test(manifests["server.json"].version),
+  "hosted MCP version is independently versioned",
+);
+for (const [path, url] of Object.entries(urls))
+  check(url === serverUrl, `${path} uses ${serverUrl}`);
 for (const path of [".claude-plugin/plugin.json", ".cursor-plugin/plugin.json"]) {
   check(manifests[path].name === plugin.name, `${path} is named ${plugin.name}`);
   check(manifests[path].description === plugin.description, `${path} matches the description`);
 }
 
 check(/^[a-z0-9]+(-[a-z0-9]+)*$/.test(plugin.name), "name is lowercase kebab-case");
-check(manifests["server.json"].description.length <= 100, "server.json description is 100 chars or less");
+check(
+  manifests["server.json"].description.length <= 100,
+  "server.json description is 100 chars or less",
+);
 check(listing.displayName.length <= 30, "displayName is 30 chars or less");
 check(listing.shortDescription.length <= 30, "shortDescription is 30 chars or less");
 check(listing.longDescription.length <= 4000, "longDescription is 4,000 chars or less");
 check(listing.developerName.length <= 80, "developerName is 80 chars or less");
 check(listing.defaultPrompt.length <= 3, "at most 3 default prompts");
-check(listing.defaultPrompt.every((p) => p.length <= 128), "default prompts are 128 chars or less");
+check(
+  listing.defaultPrompt.every((p) => p.length <= 128),
+  "default prompts are 128 chars or less",
+);
 check(review.test_cases.positive.length === 5, "exactly 5 positive review cases");
 check(review.test_cases.negative.length === 3, "exactly 3 negative review cases");
 check(
@@ -68,7 +81,11 @@ const listingUrls = {
 for (const [field, url] of Object.entries(listingUrls)) {
   check(url?.startsWith("https://"), `${field} is an HTTPS URL`);
 }
-for (const path of [listing.logo, listing.composerIcon, manifests[".cursor-plugin/plugin.json"].logo]) {
+for (const path of [
+  listing.logo,
+  listing.composerIcon,
+  manifests[".cursor-plugin/plugin.json"].logo,
+]) {
   check(existsSync(join(root, path)), `${path} exists`);
 }
 check(existsSync(join(root, "skills/travel-power/SKILL.md")), "the skill exists");
@@ -92,7 +109,10 @@ const runLive = async () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
       signal: AbortSignal.timeout(20_000),
     });
-    return (await response.json()).result;
+    if (!response.ok) throw new Error(`${method}: HTTP ${response.status}`);
+    const body = await response.json();
+    if (body.error) throw new Error(`${method}: ${body.error.message}`);
+    return body.result;
   };
   const call = (name, args) => rpc("tools/call", { name, arguments: args });
   const text = (result) => result.content.map((part) => part.text).join("\n");
@@ -103,16 +123,23 @@ const runLive = async () => {
     clientInfo: { name: "willitplug-plugin-check", version: plugin.version },
   });
   check(info.serverInfo.name === "willitplug", "server answers initialize");
+  check(
+    info.serverInfo.version === manifests["server.json"].version,
+    "registry metadata matches the hosted MCP version",
+  );
 
   const { tools } = await rpc("tools/list");
   check(
-    tools.map((tool) => tool.name).sort().join() === "check_trip,country_plugs",
-    "server lists check_trip and country_plugs",
+    tools
+      .map((tool) => tool.name)
+      .sort()
+      .join() === "check_trip,country_plugs,find_countries_by_outlet,plug_type",
+    "server lists all four product tools",
   );
   for (const tool of tools) {
-    const { readOnlyHint, destructiveHint, openWorldHint, title } = tool.annotations ?? {};
+    const { readOnlyHint, destructiveHint, openWorldHint } = tool.annotations ?? {};
     check(
-      title && readOnlyHint === true && destructiveHint === false && openWorldHint === false,
+      tool.title && readOnlyHint === true && destructiveHint === false && openWorldHint === false,
       `${tool.name} has a title and explicit annotations`,
     );
   }
@@ -120,17 +147,46 @@ const runLive = async () => {
   // The tool calls behind the review cases in plugin.json.
   const usUk = await call("check_trip", { from: "us", to: "gb" });
   check(usUk.structuredContent.adapterNeeded === true, "US to UK needs an adapter");
-  check(text(usUk).includes("/from/united-states/to/united-kingdom/"), "US to UK links its trip page");
+  check(
+    text(usUk).includes("/from/united-states/to/united-kingdom/"),
+    "US to UK links its trip page",
+  );
   const itCh = await call("check_trip", { from: "it", to: "ch" });
   check(itCh.structuredContent.fit === "some", "Italy to Switzerland is a partial fit");
   const usJp = await call("check_trip", { from: "us", to: "jp" });
   check(usJp.structuredContent.notes.length === 2, "US to Japan keeps its two regional notes");
-  check(usJp.structuredContent.converterNeeded === "maybe", "US to Japan leaves voltage to the label");
+  check(
+    usJp.structuredContent.converterNeeded === "maybe",
+    "US to Japan leaves voltage to the label",
+  );
   const japan = await call("country_plugs", { country: "jp" });
-  check(text(japan).includes("100V") && text(japan).includes("/plugs/japan/"), "Japan lookup answers");
+  check(
+    text(japan).includes("100V") && text(japan).includes("/plugs/japan/"),
+    "Japan lookup answers",
+  );
   const unknown = await call("country_plugs", { country: "Narnia" });
   check(unknown.isError === true, "unknown country is an error the model can read");
-  const leaked = [usUk, itCh, usJp, japan].some((result) => JSON.stringify(result).includes("amazon."));
+  const byOutlet = await call("find_countries_by_outlet", { type: "G" });
+  check(
+    byOutlet.structuredContent.countries.some((country) => country.code === "gb") &&
+      !byOutlet.structuredContent.countries.some((country) => country.code === "us"),
+    "Type G countries include GB and exclude US",
+  );
+  const plugType = await call("plug_type", { type: "G" });
+  check(
+    plugType.structuredContent.plugs.some((plug) => plug.standard === "BS 1363" && plug.earthed),
+    "Type G has the grounded BS 1363 standard",
+  );
+  const sameCountry = await call("check_trip", { from: "Japan", to: "jp" });
+  check(
+    sameCountry.structuredContent.adapterNeeded === false &&
+      sameCountry.structuredContent.converterNeeded === "no" &&
+      new URL(sameCountry.structuredContent.url).pathname === "/plugs/japan/",
+    "same-country lookup returns a valid country page and no adapter or voltage conversion",
+  );
+  const leaked = [usUk, itCh, usJp, japan, byOutlet, plugType, sameCountry].some((result) =>
+    JSON.stringify(result).includes("amazon."),
+  );
   check(!leaked, "tool results contain no retailer links");
 
   const get = await fetch(endpoint, {
@@ -141,14 +197,21 @@ const runLive = async () => {
   await get?.body?.cancel();
 
   for (const [field, url] of Object.entries(listingUrls)) {
-    const response = await fetch(at(url), { signal: AbortSignal.timeout(20_000) }).catch(() => undefined);
+    const response = await fetch(at(url), { signal: AbortSignal.timeout(20_000) }).catch(
+      () => undefined,
+    );
     check(response?.status === 200, `${field} answers 200`);
     await response?.body?.cancel();
   }
 };
 
 if (live) {
-  await runLive().catch((error) => check(false, `live check stopped: ${error.message}`));
+  await runLive().catch((error) =>
+    check(
+      false,
+      `live check stopped: ${error.message}${error.cause ? ` (${error.cause.message})` : ""}`,
+    ),
+  );
 }
 
 console.log(failures.length ? `\n${failures.length} failed` : "\nAll checks passed");

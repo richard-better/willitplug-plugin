@@ -15,35 +15,29 @@ linked page before you submit.
 
 ## Status
 
-| Marketplace              | Route                                | Blocked on                                 |
-| ------------------------ | ------------------------------------ | ------------------------------------------ |
-| Official MCP Registry    | `mcp-publisher publish`              | DNS TXT record for `willitplug.com`        |
-| Gemini CLI gallery       | Repo topic, crawled daily            | Public repo                                |
-| Claude connector         | Developer portal                     | Paid Claude plan, live test                |
-| Claude plugin            | Developer portal, same session       | Public repo, connector submitted           |
-| ChatGPT plugin           | Plugins dashboard, ZIP               | Verified identity, demo video, live test   |
-| Cursor marketplace       | cursor.com/marketplace/publish       | Public repo, local test                    |
-| GitHub Copilot           | Own marketplace repo or direct install | Decide if worth it; no central review found |
-| Google Connected Apps    | Preview application                  | Eligibility is doubtful, see below         |
+| Marketplace           | Route                                  | Blocked on                                  |
+| --------------------- | -------------------------------------- | ------------------------------------------- |
+| Official MCP Registry | Published: `com.willitplug/willitplug` | Current endpoint version is 1.2.1           |
+| Gemini CLI gallery    | Repo topic, crawled daily              | Public repo                                 |
+| Claude connector      | Developer portal                       | Paid Claude plan, live test                 |
+| Claude plugin         | Developer portal, same session         | Public repo, connector submitted            |
+| ChatGPT plugin        | Plugins dashboard, ZIP                 | Verified identity, demo video, live test    |
+| Cursor marketplace    | cursor.com/marketplace/publish         | Public repo, local test                     |
+| GitHub Copilot        | Own marketplace repo or direct install | Decide if worth it; no central review found |
+| Google Connected Apps | Preview application                    | Eligibility is doubtful, see below          |
 
 ## Official MCP Registry
 
-The namespace `com.willitplug` needs DNS proof. HTTP proof can't work: the registry doesn't follow
-redirects and `willitplug.com` redirects to `www`, and it wouldn't cover the `www` subdomain anyway.
+The product endpoint is published as
+[`com.willitplug/willitplug`](https://registry.modelcontextprotocol.io/v0.1/servers/com.willitplug%2Fwillitplug/versions/latest).
+`server.json` mirrors its metadata. Its server version is independent of the plugin release.
 
-The signing key is at `~/.config/willitplug/mcp-registry-key.pem`, outside this repository. Keep it for
-future releases. macOS's own `openssl` has no Ed25519, so use one from nix.
-
-```sh
-alias openssl='nix shell nixpkgs#openssl -c openssl'
-KEY=~/.config/willitplug/mcp-registry-key.pem
-# The TXT record on willitplug.com, for a new key:
-echo "v=MCPv1; k=ed25519; p=$(openssl pkey -in $KEY -pubout -outform DER | tail -c 32 | base64)"
-# To publish, with mcp-publisher from https://github.com/modelcontextprotocol/registry/releases:
-PRIVATE_KEY="$(openssl pkey -in $KEY -noout -text | grep -A3 "priv:" | tail -n +2 | tr -d ' :\n')"
-mcp-publisher login dns --domain willitplug.com --private-key "${PRIVATE_KEY}"
-mcp-publisher publish
-```
+The site now serves `/.well-known/mcp-registry-auth` directly on both the apex and www host,
+so HTTP domain verification works without a redirect. The existing Ed25519 private key stays
+outside both repositories; its location and release procedure are documented in the private
+application repository. Use that existing proof and key for future releases. Do not generate
+a second identity just to release this plugin. Registry versions are immutable; publish a new
+server version only after the hosted server changes and its deployment is verified.
 
 Docs: [remote servers](https://modelcontextprotocol.io/registry/remote-servers),
 [authentication](https://modelcontextprotocol.io/registry/authentication).
@@ -53,7 +47,7 @@ Docs: [remote servers](https://modelcontextprotocol.io/registry/remote-servers),
 Submit both from [the developer portal](https://claude.ai/directory/manage). Anthropic asks for the
 connector as well as a plugin that points at it, so the listing owns the server's details.
 
-1. Add the server as a custom connector and call both tools from a conversation.
+1. Add the server as a custom connector and call its four tools from a conversation.
 2. **Submit new > MCP connector**. There is no test account to give: say the server is public with no
    authentication. Under data handling, the API is your own. Answer the sponsored content question
    truthfully: tool results have none, and linked pages may have affiliate links.
@@ -78,6 +72,9 @@ Docs: [connector](https://claude.com/docs/connectors/building/submission),
 5. Connect the server. If asked for domain verification, serve the token as plain text at
    `/.well-known/openai-apps-challenge` on the site, then deploy.
 6. Run the tool scan, then submit. After approval, publishing is a separate action.
+
+The package explicitly targets all countries where ChatGPT supports apps, as confirmed by
+Richard. See [review status](review-status.md) for the outstanding host demo and checks.
 
 `mcp.json` puts `extensions` on the server entry as OpenAI's docs show, although the Agent Plugins 1.0
 schema does not allow that property there. If a strict host rejects it, fix it for that host without
@@ -123,5 +120,7 @@ listing, not the checks.
 
 ## Releasing an update
 
-Raise `version` in all five manifests; `check.mjs` fails until they agree. Then push, publish to the
-registry, and upload a new ZIP. Claude and Cursor review each new commit or version.
+Raise `version` in the four plugin manifests; `check.mjs` checks they agree. Keep `server.json`
+aligned with the independently versioned hosted server. Then push and build a new ZIP. A plugin-only
+release does not require publishing a new MCP Registry version. Claude and Cursor review each new
+commit or version.

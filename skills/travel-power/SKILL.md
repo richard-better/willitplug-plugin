@@ -1,12 +1,21 @@
 ---
 name: travel-power
-description: "Use for travel plug and outlet compatibility between countries, destination voltage and frequency, or choosing an appropriate travel adapter or charger. Uses WillItPlug's country_plugs and check_trip tools. Does not place orders, control devices or provide electrical installation plans."
+description: Use for travel plug compatibility, destination voltage and frequency, countries using an outlet type, connector standards, or choosing a travel adapter or charger. Uses WillItPlug's public read-only MCP tools or HTTPS API.
 ---
 
 # Travel plugs, adapters and chargers
 
 Help the traveler decide what to pack, using the existing WillItPlug service.
 The public service needs no account, credentials or authentication.
+
+## Choose a lookup
+
+| Question                                             | Tool                       | Inputs                                   |
+| ---------------------------------------------------- | -------------------------- | ---------------------------------------- |
+| Will my plugs fit on a trip?                         | `check_trip`               | `from`, `to`, country names or ISO codes |
+| What outlets and voltage does a country use?         | `country_plugs`            | `country`, a country name or ISO code    |
+| Which countries use an outlet type?                  | `find_countries_by_outlet` | `type`, IEC letter A to O                |
+| What is a connector standard and which plugs fit it? | `plug_type`                | `type`, IEC letter A to O                |
 
 ## Establish the trip
 
@@ -28,6 +37,28 @@ Use the actual connected tools and their current schemas. Do not invent a
 product search, checkout, device-control or trip-saving tool. If a lookup fails
 or a country is unsupported, explain the failure and clarify the input rather
 than manufacturing a result.
+
+## HTTPS fallback
+
+When no MCP tool is connected, fetch the public read-only JSON API:
+
+```sh
+curl --fail https://www.willitplug.com/api/v1/trips/us/jp.json
+curl --fail https://www.willitplug.com/api/v1/countries/jp.json
+curl --fail 'https://www.willitplug.com/api/v1/countries.json?outlet=G'
+curl --fail 'https://www.willitplug.com/api/v1/plugs.json?type=G'
+```
+
+API country codes are lowercase ISO 3166-1 alpha-2: `gb` for the UK, `us` for the US.
+The complete country list is at `/api/v1/countries.json`. Add `limit=25` for pages,
+then follow `links.next` until null. On HTTP 429, wait for `Retry-After` before retrying.
+On other errors, use the RFC 9457 `code` and `detail` to clarify the input or report
+unavailability. Resolve inputs before making a lookup; a failure supplies no verdict.
+
+The API, SDK and CLI reference is https://www.willitplug.com/developers.md.
+For integration help over MCP, use the separate documentation server at
+https://www.willitplug.com/docs/mcp/. The product connection stays at
+https://www.willitplug.com/mcp/.
 
 ## Explain the answer
 
